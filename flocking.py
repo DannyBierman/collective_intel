@@ -27,10 +27,18 @@ class Bird(Agent):
     def change_position(self):
         # Pac-man-style teleport to the other end of the screen when trying to escape
         self.there_is_no_escape()
-        #YOUR CODE HERE -----------
-
+        self.allignment()
+        self.pos += self.move
         #END CODE -----------------
 
+    def allignment(self):
+        in_proximity = list(self.in_proximity_accuracy())
+        neighbour_count = len(in_proximity)
+        total_velocity = 0
+        for i in in_proximity:
+            total_velocity += in_proximity[i][1]
+        average_velocity = total_velocity * neighbour_count
+        self.move = average_velocity - self.move.length()
 
 class Selection(Enum):
     ALIGNMENT = auto()
