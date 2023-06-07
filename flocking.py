@@ -24,6 +24,16 @@ class FlockingConfig(Config):
 class Bird(Agent):
     config: FlockingConfig
 
+    #get weights methods
+    def get_alignment_weight(self)->float:
+        return self.config.alignment_weight
+
+    def get_cohesion_weight(self)->float:
+        return self.config.cohesion_weight
+
+    def get_separation_weight(self)->float:
+        return self.config.separation_weight
+
     def change_position(self):
         # Pac-man-style teleport to the other end of the screen when trying to escape
         self.there_is_no_escape()
