@@ -23,22 +23,53 @@ class FlockingConfig(Config):
 
 class Bird(Agent):
     config: FlockingConfig
+    
+    def alignment(self, Neighbours):
+        total_vel = Vector2()
+        for bird, distance in Neighbours:
+            total_vel += bird.move.normalize()/ distance
+            
+        return total_vel
+    
+    def seperation(self, Neighbours):
+
+        bird_positions = []
+        for bird,_ in Neighbours:
+            bird_positions.append(bird.pos)
+        position_sum = sum(bird_positions,Vector2())
+        average_position = position_sum / self.in_proximity_accuracy().count()
+        return average_position * (self.pos - bird.pos)
+    
+        
+    def cohesion(self, Neighbours):
+        bird_positions = []
+        for bird,_ in Neighbours:
+            bird_positions.append(bird.pos)
+        position_sum = sum(bird_positions,Vector2())
+
+        if self.in_proximity_accuracy().count() > 0:
+            average = position_sum / self.in_proximity_accuracy().count()
+            return average - self.pos
+        else:
+            return Vector2()
+        
+    
+
+    
 
     def change_position(self):
         # Pac-man-style teleport to the other end of the screen when trying to escape
         self.there_is_no_escape()
-        self.allignment()
-        self.pos += self.move
+        #YOUR CODE HERE -----------
+        if self.in_proximity_accuracy().count() == 0:
+            self.pos += self.move
+        else:
+            self.alignment(self.in_proximity_accuracy())
+            self.cohesion(self.in_proximity_accuracy())
+            self.seperation(self.in_proximity_accuracy())
+            self.pos += self.move
         #END CODE -----------------
 
-    def allignment(self):
-        in_proximity = list(self.in_proximity_accuracy())
-        neighbour_count = len(in_proximity)
-        total_velocity = 0
-        for i in in_proximity:
-            total_velocity += in_proximity[i][1]
-        average_velocity = total_velocity * neighbour_count
-        self.move = average_velocity - self.move.length()
 
 class Selection(Enum):
     ALIGNMENT = auto()
