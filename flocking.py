@@ -1,5 +1,6 @@
 from enum import Enum, auto
-
+import polars as pl
+import seaborn as sns
 import pygame as pg
 from pygame.math import Vector2
 from vi import Agent, Simulation
@@ -25,14 +26,16 @@ class Bird(Agent):
     config: FlockingConfig
     
     def alignment(self, Neighbours):
-        total_vel = Vector2()
+        total_vel = Vector2.length(self.move)
+        neighbour_count = 0
         for bird, distance in Neighbours:
-            total_vel += bird.move.normalize()/ distance
-            
-        return total_vel
+            total_vel += Vector2.length(self.move)
+            neighbour_count +=1
+        avg_vel = total_vel/ neighbour_count
+        return avg_vel - self.move.length()
+        
     
     def seperation(self, Neighbours):
-
         bird_positions = []
         for bird,_ in Neighbours:
             bird_positions.append(bird.pos)
@@ -48,8 +51,9 @@ class Bird(Agent):
         position_sum = sum(bird_positions,Vector2())
 
         if self.in_proximity_accuracy().count() > 0:
-            average = position_sum / self.in_proximity_accuracy().count()
-            return average - self.pos
+            average_pos = position_sum / self.in_proximity_accuracy().count()
+            force_c = average_pos - self.pos
+            return force_c - self.move
         else:
             return Vector2()
         
@@ -67,7 +71,10 @@ class Bird(Agent):
             self.alignment(self.in_proximity_accuracy())
             self.cohesion(self.in_proximity_accuracy())
             self.seperation(self.in_proximity_accuracy())
-            self.pos += self.move
+            f_total = (self.alignment(self.in_proximity_accuracy()) + 
+                       self.cohesion(self.in_proximity_accuracy()) + 
+                       self.seperation(self.in_proximity_accuracy()))/FlockingConfig.mass
+            self.pos += self.move + f_total
         #END CODE -----------------
 
 
@@ -109,15 +116,25 @@ class FlockingLive(Simulation):
         print(f"A: {a:.1f} - C: {c:.1f} - S: {s:.1f}")
 
 
-(
+data_frame = (
     FlockingLive(
         FlockingConfig(
             image_rotation=True,
             movement_speed=1,
             radius=50,
+            duration= 5*60,
             seed=1,
+            fps_limit= 0
         )
     )
     .batch_spawn_agents(50, Bird, images=["images/bird.png"])
     .run()
+    .snapshots
+    .groupby(["frame", "image_index"])
+    .agg(pl.count("id").alias("agents"))
+    .sort(["frame", "image_index"])
+    
 )
+print(data_frame)
+plot = sns.relplot(x = data_frame["frame"], y = data_frame["agents"], hue= data_frame["image_index"],kind = "line" )
+plot.savefig("agent.png", dpi = 300)
