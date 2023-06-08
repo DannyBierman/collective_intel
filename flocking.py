@@ -1,5 +1,6 @@
 from enum import Enum, auto
-
+import polars as pl
+import seaborn as sns
 import pygame as pg
 from pygame.math import Vector2
 from vi import Agent, Simulation
@@ -23,6 +24,42 @@ class FlockingConfig(Config):
 
 class Bird(Agent):
     config: FlockingConfig
+    
+    def alignment(self, Neighbours):
+        total_vel = Vector2.length(self.move)
+        neighbour_count = 0
+        for bird, distance in Neighbours:
+            total_vel += Vector2.length(self.move)
+            neighbour_count +=1
+        avg_vel = total_vel/ neighbour_count
+        return avg_vel - self.move.length()
+        
+    
+    def seperation(self, Neighbours):
+        bird_positions = []
+        for bird,_ in Neighbours:
+            bird_positions.append(bird.pos)
+        position_sum = sum(bird_positions,Vector2())
+        average_position = position_sum / self.in_proximity_accuracy().count()
+        return average_position * (self.pos - bird.pos)
+    
+        
+    def cohesion(self, Neighbours):
+        bird_positions = []
+        for bird,_ in Neighbours:
+            bird_positions.append(bird.pos)
+        position_sum = sum(bird_positions,Vector2())
+
+        if self.in_proximity_accuracy().count() > 0:
+            average_pos = position_sum / self.in_proximity_accuracy().count()
+            force_c = average_pos - self.pos
+            return force_c - self.move
+        else:
+            return Vector2()
+        
+    
+
+    
 
     #get weights methods
     def get_alignment_weight(self)->float:
@@ -37,18 +74,19 @@ class Bird(Agent):
     def change_position(self):
         # Pac-man-style teleport to the other end of the screen when trying to escape
         self.there_is_no_escape()
-        self.allignment()
-        self.pos += self.move
+        #YOUR CODE HERE -----------
+        if self.in_proximity_accuracy().count() == 0:
+            self.pos += self.move
+        else:
+            self.alignment(self.in_proximity_accuracy())
+            self.cohesion(self.in_proximity_accuracy())
+            self.seperation(self.in_proximity_accuracy())
+            f_total = (self.alignment(self.in_proximity_accuracy()) + 
+                       self.cohesion(self.in_proximity_accuracy()) + 
+                       self.seperation(self.in_proximity_accuracy()))/FlockingConfig.mass
+            self.pos += self.move + f_total
         #END CODE -----------------
 
-    def allignment(self):
-        in_proximity = list(self.in_proximity_accuracy())
-        neighbour_count = len(in_proximity)
-        total_velocity = 0
-        for i in in_proximity:
-            total_velocity += in_proximity[i][1]
-        average_velocity = total_velocity * neighbour_count
-        self.move = average_velocity - self.move.length()
 
 class Selection(Enum):
     ALIGNMENT = auto()
@@ -88,15 +126,25 @@ class FlockingLive(Simulation):
         print(f"A: {a:.1f} - C: {c:.1f} - S: {s:.1f}")
 
 
-(
+data_frame = (
     FlockingLive(
         FlockingConfig(
             image_rotation=True,
             movement_speed=1,
             radius=50,
+            duration= 5*60,
             seed=1,
+            fps_limit= 0
         )
     )
     .batch_spawn_agents(50, Bird, images=["images/bird.png"])
     .run()
+    .snapshots
+    .groupby(["frame", "image_index"])
+    .agg(pl.count("id").alias("agents"))
+    .sort(["frame", "image_index"])
+    
 )
+print(data_frame)
+plot = sns.relplot(x = data_frame["frame"], y = data_frame["agents"], hue= data_frame["image_index"],kind = "line" )
+plot.savefig("agent.png", dpi = 300)
