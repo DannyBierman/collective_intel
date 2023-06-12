@@ -10,9 +10,9 @@ from vi.config import Config, dataclass, deserialize
 @deserialize
 @dataclass
 class FlockingConfig(Config):
-    alignment_weight: float = 1
-    cohesion_weight: float = 0.2
-    separation_weight: float = 0.2
+    alignment_weight: float = 5
+    cohesion_weight: float = 4
+    separation_weight: float = 5
 
     delta_time: float = 3
 
@@ -26,7 +26,7 @@ class FlockingConfig(Config):
 
 class Bird(Agent):
     config: FlockingConfig
-    
+
     def alignment(self, neighbors):
         total_vel = Vector2()
         neighbor_count = 0
@@ -38,15 +38,15 @@ class Bird(Agent):
             return avg_vel - self.move
         else:
             return Vector2()
-        
-    
+
+
     def separation(self, neighbors):
         total_force = Vector2()
         for bird, distance in neighbors:
             total_force += self.pos - bird.pos
         return total_force / len(neighbors)
-    
-        
+
+
     def cohesion(self, neighbors):
         bird_positions = [bird.pos for bird, distance in neighbors]
         position_sum = sum(bird_positions, Vector2())
@@ -57,10 +57,10 @@ class Bird(Agent):
             return force_c - self.move
         else:
             return Vector2()
-        
-    
 
-    
+
+
+
 
     #get weights methods
     def get_alignment_weight(self)->float:
@@ -88,13 +88,17 @@ class Bird(Agent):
             separation_force = self.separation(neighbors)
             cohesion_force = self.cohesion(neighbors)
 
+            alignment_force = alignment_force.normalize()
+            separation_force = separation_force.normalize()
+            cohesion_force = cohesion_force.normalize()
+
             # Calculate total force
             f_total = (
                               self.config.alignment_weight * alignment_force +
                               self.config.separation_weight * separation_force +
                               self.config.cohesion_weight * cohesion_force
                       ) / self.config.mass
-
+            f_total = f_total.normalize()
             # Update the move vector
             self.move += f_total
 
@@ -158,10 +162,10 @@ data_frame = (
         FlockingConfig(
             image_rotation=True,
             movement_speed=1,
-            radius=50,
+            radius=100,
             duration= 5*60,
             seed=1,
-            fps_limit=33
+            fps_limit=30
         )
     )
     .batch_spawn_agents(50, Bird, images=["images/bird.png"])
@@ -170,7 +174,7 @@ data_frame = (
     .groupby(["frame", "image_index"])
     .agg(pl.count("id").alias("agents"))
     .sort(["frame", "image_index"])
-    
+
 )
 print(data_frame)
 plot = sns.relplot(x = data_frame["frame"], y = data_frame["agents"], hue= data_frame["image_index"],kind = "line" )
