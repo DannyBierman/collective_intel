@@ -26,6 +26,42 @@ class FlockingConfig(Config):
 
 class Bird(Agent):
     config: FlockingConfig
+    
+    def alignment(self, Neighbours):
+        total_vel = Vector2.length(self.move)
+        neighbour_count = 0
+        for bird, distance in Neighbours:
+            total_vel += Vector2.length(self.move)
+            neighbour_count +=1
+        avg_vel = total_vel/ neighbour_count
+        return avg_vel - self.move.length()
+        
+    
+    def seperation(self, Neighbours):
+        bird_positions = []
+        for bird,_ in Neighbours:
+            bird_positions.append(bird.pos)
+        position_sum = sum(bird_positions,Vector2())
+        average_position = position_sum / self.in_proximity_accuracy().count()
+        return average_position * (self.pos - bird.pos)
+    
+        
+    def cohesion(self, Neighbours):
+        bird_positions = []
+        for bird,_ in Neighbours:
+            bird_positions.append(bird.pos)
+        position_sum = sum(bird_positions,Vector2())
+
+        if self.in_proximity_accuracy().count() > 0:
+            average_pos = position_sum / self.in_proximity_accuracy().count()
+            force_c = average_pos - self.pos
+            return force_c - self.move
+        else:
+            return Vector2()
+        
+    
+
+    
 
     def alignment(self, neighbors):
         total_vel = Vector2()
@@ -162,20 +198,13 @@ data_frame = (
         FlockingConfig(
             image_rotation=True,
             movement_speed=1,
+
             radius=100,
             duration= 5*60,
             seed=1,
             fps_limit=30
-        )
-    )
-    .batch_spawn_agents(50, Bird, images=["images/bird.png"])
-    .run()
-    .snapshots
-    .groupby(["frame", "image_index"])
-    .agg(pl.count("id").alias("agents"))
-    .sort(["frame", "image_index"])
-
-)
-print(data_frame)
-plot = sns.relplot(x = data_frame["frame"], y = data_frame["agents"], hue= data_frame["image_index"],kind = "line" )
-plot.savefig("agent.png", dpi = 300)
+=======
+            radius=50,
+            duration= 5*60,
+            seed=1,
+            fps_limit= 0
