@@ -10,13 +10,15 @@ from vi.config import Config, dataclass, deserialize
 @deserialize
 @dataclass
 class FlockingConfig(Config):
-    alignment_weight: float = 0.5
-    cohesion_weight: float = 0.5
-    separation_weight: float = 0.5
+    alignment_weight: float = 5
+    cohesion_weight: float = 4
+    separation_weight: float = 5
 
     delta_time: float = 3
 
     mass: int = 20
+
+    max_velocity: float = 5
 
     def weights(self) -> tuple[float, float, float]:
         return (self.alignment_weight, self.cohesion_weight, self.separation_weight)
@@ -61,22 +63,92 @@ class Bird(Agent):
 
     
 
+    def alignment(self, neighbors):
+        total_vel = Vector2()
+        neighbor_count = 0
+        for bird, distance in neighbors:
+            total_vel += bird.move
+            neighbor_count += 1
+        if neighbor_count > 0:
+            avg_vel = total_vel / neighbor_count
+            return avg_vel - self.move
+        else:
+            return Vector2()
+
+
+    def separation(self, neighbors):
+        total_force = Vector2()
+        for bird, distance in neighbors:
+            total_force += self.pos - bird.pos
+        return total_force / len(neighbors)
+
+
+    def cohesion(self, neighbors):
+        bird_positions = [bird.pos for bird, distance in neighbors]
+        position_sum = sum(bird_positions, Vector2())
+
+        if len(neighbors) > 0:
+            average_pos = position_sum / len(neighbors)
+            force_c = average_pos - self.pos
+            return force_c - self.move
+        else:
+            return Vector2()
+
+
+
+
+
+    #get weights methods
+    def get_alignment_weight(self)->float:
+        return self.config.alignment_weight
+
+    def get_cohesion_weight(self)->float:
+        return self.config.cohesion_weight
+
+    def get_separation_weight(self)->float:
+        return self.config.separation_weight
+
     def change_position(self):
         # Pac-man-style teleport to the other end of the screen when trying to escape
         self.there_is_no_escape()
-        #YOUR CODE HERE -----------
-        if self.in_proximity_accuracy().count() == 0:
-            self.pos += self.move
-        else:
-            self.alignment(self.in_proximity_accuracy())
-            self.cohesion(self.in_proximity_accuracy())
-            self.seperation(self.in_proximity_accuracy())
-            f_total = (self.alignment(self.in_proximity_accuracy()) + 
-                       self.cohesion(self.in_proximity_accuracy()) + 
-                       self.seperation(self.in_proximity_accuracy()))/FlockingConfig.mass
-            self.pos += self.move + f_total
-        #END CODE -----------------
 
+        # Check neighbors in radius R
+        neighbors = list(self.in_proximity_accuracy())
+
+        if len(neighbors) == 0:
+            # No neighbors, perform wandering
+            self.wandering()
+        else:
+            # Calculate alignment, separation, and cohesion forces
+            alignment_force = self.alignment(neighbors)
+            separation_force = self.separation(neighbors)
+            cohesion_force = self.cohesion(neighbors)
+
+            alignment_force = alignment_force.normalize()
+            separation_force = separation_force.normalize()
+            cohesion_force = cohesion_force.normalize()
+
+            # Calculate total force
+            f_total = (
+                              self.config.alignment_weight * alignment_force +
+                              self.config.separation_weight * separation_force +
+                              self.config.cohesion_weight * cohesion_force
+                      ) / self.config.mass
+            f_total = f_total.normalize()
+            # Update the move vector
+            self.move += f_total
+
+            # Limit the maximum velocity
+            if self.move.length() > self.config.max_velocity:
+                self.move.scale_to_length(self.config.max_velocity)
+
+            # Update the position
+            self.pos += self.move * self.config.delta_time
+
+    def wandering(self):
+        # Perform wandering behavior
+        # Your wandering logic goes here
+        pass
 
 class Selection(Enum):
     ALIGNMENT = auto()
@@ -95,6 +167,11 @@ class FlockingLive(Simulation):
             self.config.cohesion_weight += by
         elif self.selection == Selection.SEPARATION:
             self.config.separation_weight += by
+
+        # Ensure the weights stay within the range of 0.0 to 1.0
+        self.config.alignment_weight = max(0.0, min(1.0, self.config.alignment_weight))
+        self.config.cohesion_weight = max(0.0, min(1.0, self.config.cohesion_weight))
+        self.config.separation_weight = max(0.0, min(1.0, self.config.separation_weight))
 
     def before_update(self):
         super().before_update()
@@ -121,20 +198,13 @@ data_frame = (
         FlockingConfig(
             image_rotation=True,
             movement_speed=1,
+
+            radius=100,
+            duration= 5*60,
+            seed=1,
+            fps_limit=30
+=======
             radius=50,
             duration= 5*60,
             seed=1,
             fps_limit= 0
-        )
-    )
-    .batch_spawn_agents(50, Bird, images=["images/bird.png"])
-    .run()
-    .snapshots
-    .groupby(["frame", "image_index"])
-    .agg(pl.count("id").alias("agents"))
-    .sort(["frame", "image_index"])
-    
-)
-print(data_frame)
-plot = sns.relplot(x = data_frame["frame"], y = data_frame["agents"], hue= data_frame["image_index"],kind = "line" )
-plot.savefig("agent.png", dpi = 300)
