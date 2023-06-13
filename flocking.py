@@ -121,6 +121,7 @@ data_frame = (
         FlockingConfig(
             image_rotation=True,
             movement_speed=1,
+<<<<<<< Updated upstream
             radius=50,
             duration= 5*60,
             seed=1,
@@ -138,3 +139,23 @@ data_frame = (
 print(data_frame)
 plot = sns.relplot(x = data_frame["frame"], y = data_frame["agents"], hue= data_frame["image_index"],kind = "line" )
 plot.savefig("agent.png", dpi = 300)
+=======
+            radius=100,
+            duration= 5*60,
+            seed=1,
+            fps_limit=30
+)
+)
+.batch_spawn_agents(50, Bird, images=["images/bird.png"])
+     .run()
+     .snapshots
+     .groupby(["frame", "image_index"])
+     .agg(pl.count("id").alias("agents"))
+     .sort(["frame", "image_index"])
+
+)
+print(data_frame)
+plot = sns.relplot(x=data_frame["frame"], y=data_frame["agents"], hue=data_frame["image_index"], kind="line")
+plot.savefig("agent.png", dpi=300)
+
+>>>>>>> Stashed changes
