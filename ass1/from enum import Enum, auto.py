@@ -44,15 +44,39 @@ class MyAgent(Agent):
         neighbours = list(self.in_proximity_accuracy())
         bird_positions = [bird.pos for bird, distance in neighbours]
         position_sum = sum(bird_positions, Vector2())
-        if random.random() < self.probability_joint(neighbours):        
+        if random.random() < self.probability_joint(neighbours):
             average_pos = position_sum / len(neighbours)
             force_c = average_pos - self.pos
-            return force_c - self.move  
+            return force_c - self.move
         else:
             return Vector2()
-        
-        self.move += self.pos * self.Agent 
-    
+
+
+    def probability_leave(self, Neighbours):
+        neighbour_count = 0
+        for bird, distance in Neighbours:
+            neighbour_count += 1
+
+        probability = 0
+        if neighbour_count < 3: #low density = leave high prob
+            probability = 1
+        else:
+            probability = 3/ neighbour_count #low prob
+        return probability
+
+    def leaving(self, Neighbours):
+        neighbours = list(self.in_proximity_accuracy())
+        bird_positions = [bird.pos for bird, distance in neighbours]
+        position_sum = sum(bird_positions, Vector2())
+        if random.random() < self.probability_leave(neighbours):
+            average_pos = position_sum / len(neighbours)
+            force_c = self.pos - average_pos
+            return force_c - self.move
+        else:
+            #stay
+            return Vector2()
+
+        self.move += self.pos * self.Agent
 
                  
 
