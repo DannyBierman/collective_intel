@@ -10,9 +10,9 @@ from vi.config import Config, dataclass, deserialize
 @deserialize
 @dataclass
 class FlockingConfig(Config):
-    alignment_weight: float = 5
-    cohesion_weight: float = 4
-    separation_weight: float = 5
+    alignment_weight: float = 0.6
+    cohesion_weight: float = 0.4
+    separation_weight: float = 0.5
 
     delta_time: float = 3
 
