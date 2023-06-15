@@ -8,6 +8,7 @@ from vi.config import Config, dataclass, deserialize
 import random
 import numpy as np
 import math
+import polars as pl
 
 
 
@@ -77,7 +78,7 @@ data_frame = (
         Config(
             image_rotation=True,
             movement_speed=10,
-
+            duration= 1*60,
             radius=100,
             seed=1,
             fps_limit=30
@@ -89,10 +90,6 @@ data_frame = (
     .spawn_site("images/red2_copy.png", x=575, y=375)
     .run()
     .snapshots
-    .groupby(["frame", "image_index"])
-    .agg(pl.count("id").alias("agents"))
-    .sort(["frame", "image_index"])
-
 )
 # Stop the simulation after a certain number of iterations???
 #max_iterations=1000
@@ -102,10 +99,18 @@ print(data_frame)
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-grouped_data = data_frame.groupby(["frame", "image_index"]).size().reset_index(name="agents")
+# Calculate the number of agents in each aggregation site
+grouped_data = (
+    data_frame
+    .groupby(["frame", "image_index"])
+    .size()
+    .reset_index(name="agents")
+)
 
+# Plot the data
 sns.relplot(x="frame", y="agents", hue="image_index", kind="line", data=grouped_data)
-plt.title("Number of Agents in Each Site Over Time")
+plt.title("Number of Agents in Each Aggregation Site Over Time")
 plt.xlabel("Frame")
 plt.ylabel("Number of Agents")
-plt.savefig("agents_over_time.png", dpi=300)
+plt.show()
+plot.savefig("agents.png", dpi = 300)
