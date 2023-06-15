@@ -49,6 +49,7 @@ class Cockroach(Agent):
  def still(self):
     if self.counter % 40 == 0 and self.on_site():
         self.freeze_movement()
+    if self.probability_leave(self.in_proximity_accuracy):
         self.state = "leaving"
 
 
@@ -88,8 +89,10 @@ data_frame = (
             fps_limit=30
         )
     )
-    .batch_spawn_agents(50, Cockroach, images=["images/bird.png"])
-    .spawn_site("images/red2.png", x=375, y=375)
+    .batch_spawn_agents(50, Cockroach, images=["images/cockroach.png"])
+    #.spawn_site("images/red2.png", x=375, y=375)
+    .spawn_site("images/red2.png", x=175, y=375)
+    .spawn_site("images/red2_copy.png", x=575, y=375)
     .run()
     .snapshots
 
