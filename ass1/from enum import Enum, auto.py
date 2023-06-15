@@ -18,6 +18,7 @@ import polars as pl
 class Cockroach(Agent):
  counter = 0
  probability_threshold : float = 0.5
+ cockroach_counts = []
  state = "wandering"
  def wandering(self):
     self.continue_movement()
@@ -48,9 +49,11 @@ class Cockroach(Agent):
         self.state = "wandering"
 
  def still(self):
+     
     if self.counter % 40 == 0 and self.on_site():
         self.freeze_movement()
-    if self.probability_leave(self.in_proximity_accuracy):
+    self.cockroach_counts.append(self.in_proximity_accuracy().count())
+    if self.probability_leave(self.in_proximity_accuracy()):
         self.state = "leaving"
 
  def update(self):
@@ -77,17 +80,16 @@ data_frame = (
     Simulation(
         Config(
             image_rotation=True,
-            movement_speed=10,
-            duration= 1*60,
+            movement_speed=200,
+            #duration= 1*60,
             radius=100,
             seed=1,
             fps_limit=30
         )
     )
-    .batch_spawn_agents(50, Cockroach, images=["images/cockroach.png"])
-    #.spawn_site("images/red2.png", x=375, y=375)
-    .spawn_site("images/red2.png", x=175, y=375)
-    .spawn_site("images/red2_copy.png", x=575, y=375)
+    .batch_spawn_agents(50, Cockroach, images=["ass1/images/cockroach.png"])
+    .spawn_site("ass1/images/red2.png", x=175, y=375)
+    .spawn_site("ass1/images/red2_copy.png", x=575, y=375)
     .run()
     .snapshots
 )
@@ -96,9 +98,17 @@ data_frame = (
 #vi function: Simulation.stop()
 
 print(data_frame)
+
 import seaborn as sns
 import matplotlib.pyplot as plt
+# Plot the number of cockroaches in the site
+plt.plot(range(len(Cockroach.cockroach_counts)), Cockroach.cockroach_counts)
+plt.xlabel('frame')
+plt.ylabel('Number of Cockroaches in Site')
+plt.title('Number of Cockroaches in Site Over Time')
+plt.show()
 
+"""
 # Calculate the number of agents in each aggregation site
 grouped_data = (
     data_frame
@@ -113,4 +123,5 @@ plt.title("Number of Agents in Each Aggregation Site Over Time")
 plt.xlabel("Frame")
 plt.ylabel("Number of Agents")
 plt.show()
-plot.savefig("agents.png", dpi = 300)
+plt.savefig("agents.png", dpi = 300)
+"""
