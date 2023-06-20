@@ -14,11 +14,15 @@ class Foxes(Agent):
     energy = 1
 
     def chase_rabbit(self):
-        Neighbours = (self.in_proximity_accuracy()
-                      .filter_kind(Rabbit))
-        rabbit_positions =[]
-        for rabbit in Neighbours.without_distance():
-                rabbit_positions.append(rabbit.pos)
+        target_rabbits = []
+        for agent in self.in_proximity_accuracy().without_distance().filter_kind(Rabbit):
+            target_rabbits.append(agent.pos)
+        position_sum = sum(target_rabbits, Vector2())
+        if self.in_proximity_accuracy().filter_kind(Rabbit).count() > 0:
+            average_pos = position_sum / self.in_proximity_accuracy().filter_kind(Rabbit).count()
+            self.move = self.pos-average_pos
+            self.move = self.move.normalize()
+            self.pos += self.move
 
     def kill_rabbit(self):
         for agent, distance in self.in_proximity_accuracy().filter_kind(Rabbit):
@@ -33,6 +37,7 @@ class Foxes(Agent):
         if self.energy <= 0:
             self.kill()
         if self.in_proximity_accuracy():
+            self.chase_rabbit()
             self.kill_rabbit()
 
 class Rabbit(Agent):
@@ -52,7 +57,7 @@ data_frame = (
                 image_rotation=True,
                 movement_speed=10,
                 # duration= 1*60,
-                radius=100,
+                radius=15,
                 seed=1,
                 fps_limit=30
         )
