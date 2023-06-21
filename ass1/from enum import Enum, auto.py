@@ -88,8 +88,14 @@ data_frame = (
             fps_limit=30
         )
     )
+<<<<<<< Updated upstream
     .batch_spawn_agents(50, Cockroach, images=["images/bird.png"])
     .spawn_site("images/red2.png", x=375, y=375)
+=======
+    .batch_spawn_agents(50, Cockroach, images=["ass1/images/cockroach.png"])
+    .spawn_site("ass1/images/red2.png", x=175, y=375)
+    .spawn_site("ass1/images/red2.png", x=575, y=375)
+>>>>>>> Stashed changes
     .run()
     .snapshots
 
