@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 class Configure():
     Fox_population_counter= 20
     Rabbit_population_counter = 50
+    Grass_counter = 0
     Fox_population = []
     Rabbit_population = []
     pass
@@ -35,11 +36,11 @@ class Foxes(Agent):
 
     def kill_rabbit(self):
         for agent, distance in self.in_proximity_accuracy().filter_kind(Rabbit):
-            if distance < 10:
+            if distance < 10 and agent.alive():
                 agent.kill()
                 self.energy += 0.5
                 self.reproduce()
-                print("killed a rabbit")
+                #print("killed a rabbit")
                 Configure.Fox_population_counter += 1
                 Configure.Rabbit_population_counter -= 1
 
@@ -57,7 +58,6 @@ class Foxes(Agent):
 
 class Rabbit(Agent):
     energy = 1
-    counter = 0
     def reproducing(self):
         if random.random() < 0.004:
             self.reproduce()
@@ -67,12 +67,12 @@ class Rabbit(Agent):
         for agent, distance in self.in_proximity_accuracy().filter_kind(Grass):
             if distance < 10 and self.in_proximity_accuracy().filter_kind(Rabbit).count() == 0 and agent._image_index == 0:
                 self.freeze_movement()
-                self.counter += 1
-                if self.counter % 50 == 0:
+                Configure.Grass_counter += 1
+                if Configure.Grass_counter % 50 == 0:
                     agent.change_image(1)
                     agent.timer = 1
                     self.energy += 0.5
-                    print("Ate grass")
+                    #print("Ate grass")
                     self.continue_movement()
     def running(self):
         foxes = []
@@ -117,26 +117,31 @@ data_frame = (
 
         )
     )
-        .batch_spawn_agents(50, Rabbit, images=["images/cockroach.png"])
-        .batch_spawn_agents(20, Foxes, images=["images/bird.png"])
-        .batch_spawn_agents(20, Grass, images=["images/green2.png","images/green.png"])
+        .batch_spawn_agents(50, Rabbit, images=["ass1/images/rabbit head.png"])
+        .batch_spawn_agents(20, Foxes, images=["ass1/images/fox head.png"])
+        .batch_spawn_agents(20, Grass, images=["ass1/images/green2.png","ass1/images/green.png"])
         .run()
         .snapshots
 
 )
 indices = range(0, len(Configure.Fox_population), 100)
-
-
 population_subset = [Configure.Fox_population[i] for i in indices]
-
-plt.plot( indices, population_subset)
+plt.plot(indices, population_subset, label='Fox population')
 
 r_indices = range(0, len(Configure.Rabbit_population), 100)
 r_population_subset = [Configure.Rabbit_population[i] for i in r_indices]
-
-plt.plot(r_indices, r_population_subset)
+plt.plot(r_indices, r_population_subset, label='Rabbit population')
 
 plt.xlabel('Time')
-plt.ylabel('Fox Population')
-plt.title('Fox Population Over Time')
+plt.ylabel('Population')
+plt.title('Population Over Time')
+
+plt.legend()
+
 plt.show()
+
+
+
+
+
+
