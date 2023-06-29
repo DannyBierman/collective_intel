@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 
 class Configure():
     Fox_population_counter= 20
-    Rabbit_population_counter = 35
+    Rabbit_population_counter = 50
     Grass_counter = 0
     rabbit_energy_decay_rate = 0.001
     fox_energy_decay_rate = 0.03
@@ -116,31 +116,39 @@ data_frame = (
         Config(
                 image_rotation=True,
                 movement_speed=8,
-                duration= 20*30,
+                duration= 60*30,
                 radius=15,
-                seed=1,
+                seed=19,
                 fps_limit=30
 
         )
     )
-        .batch_spawn_agents(35, Rabbit, images=["ass1/images/rabbit head.png"])
-        .batch_spawn_agents(20, Foxes, images=["ass1/images/fox head.png"])
-        .batch_spawn_agents(20, Grass, images=["ass1/images/green2.png","ass1/images/green.png"])
+        .batch_spawn_agents(50, Rabbit, images=["images/rabbit head.png"])
+        .batch_spawn_agents(20, Foxes, images=["images/fox head.png"])
+        .batch_spawn_agents(20, Grass, images=["images/green2.png","images/green.png"])
         .run()
         .snapshots
 
 )
+# Calculate variance of fox population
+fox_population_variance = np.var(Configure.Fox_population)
+
+# Calculate variance of rabbit population
+rabbit_population_variance = np.var(Configure.Rabbit_population)
+
+print("Variance of Fox population:", fox_population_variance)
+print("Variance of Rabbit population:", rabbit_population_variance)
 
 indices = list(range(0, len(Configure.Fox_population), 100))
 max_index = max(indices)
 population_subset = [Configure.Fox_population[i] for i in indices]
-second = [x*20/max_index for x in indices]
+second = [x*60/max_index for x in indices]
 plt.plot(second, population_subset, label='Fox population')
 
 
 r_indices = list(range(0, len(Configure.Rabbit_population), 100))
 r_population_subset = [Configure.Rabbit_population[i] for i in r_indices]
-r_second = [x*20/max_index for x in indices]
+r_second = [x*60/max_index for x in indices]
 plt.plot(r_second, r_population_subset, label='Rabbit population')
 
 plt.xlabel('Time (Seconds)')
