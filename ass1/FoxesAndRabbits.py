@@ -25,13 +25,13 @@ class Configure():
     rabbit_eat_dist = 10
 
     #only change:
-    fox_reproduce_2_thr = 5#3
-    fox_reproduce_3_thr=10#5
-    rabbit_reproduce_2_thr = 3
-    rabbit_reproduce_3_thr=5
+    fox_reproduce_2_thr = 4#3
+    fox_reproduce_3_thr=6#5
+    rabbit_reproduce_2_thr = 1
+    rabbit_reproduce_3_thr=2
 
-    fox_mate_dist = 10
-    rabbit_mate_dist = 10
+    fox_mate_dist = 25
+    rabbit_mate_dist = 65
 
     Fox_population = []
     Rabbit_population = []
@@ -41,8 +41,6 @@ class Configure():
 
 class Foxes_male(Agent):
     energy = 1 #can adjust for survival adv
-    timer = 1
-    fertile = False
 
     def kill_rabbit(self):
         for agent, distance in self.in_proximity_accuracy().filter_kind(Rabbit_male):
@@ -57,7 +55,6 @@ class Foxes_male(Agent):
                 Configure.Rabbit_population_counter -= 1
 
     def update(self):
-        self.timer += 1
         self.energy -= Configure.fox_energy_decay_rate  # FOX_ENERGY_DECAY_RATE
         if self.energy <= 0:
             self.kill()
@@ -69,36 +66,44 @@ class Foxes_male(Agent):
 
 class Foxes_female(Agent):
     energy = 1
-    timer = 1
+    fertility_timer = 1
+    reproduction_timer = 1
     fertile = False
 
     def mating(self):
         for agent, distance in self.in_proximity_accuracy().filter_kind(Foxes_male):
             if distance < Configure.fox_mate_dist and agent.alive():
-                if random.random() < 0.5:
-                    self.reproduce()  # female offspring
-                else:
-                    agent.reproduce()  # male offspring
-                Configure.Fox_population_counter += 1
-                self.timer = 1
-                #print("energy fox at reproduce:")
-                #print(self.energy)
-                #print("reproduced fox")
-                if self.energy > Configure.fox_reproduce_2_thr: #3:
+                self.freeze_movement()
+                #agent.freeze_movement()
+                print("freeze")
+                self.reproduction_timer += 1
+                if self.reproduction_timer % 50 == 0:
                     if random.random() < 0.5:
                         self.reproduce()  # female offspring
                     else:
                         agent.reproduce()  # male offspring
                     Configure.Fox_population_counter += 1
-                    print("reproduced another fox")
-                    if self.energy > Configure.fox_reproduce_3_thr: #5:
+                    self.fertility_timer = 1
+                    # print("energy fox at reproduce:")
+                    # print(self.energy)
+                    # print("reproduced fox")
+                    if self.energy > Configure.fox_reproduce_2_thr:  # 3:
                         if random.random() < 0.5:
                             self.reproduce()  # female offspring
                         else:
                             agent.reproduce()  # male offspring
                         Configure.Fox_population_counter += 1
-                        print("reproduced 3 foxes")
-                self.fertile = False
+                        print("reproduced another fox")
+                        if self.energy > Configure.fox_reproduce_3_thr:  # 5:
+                            if random.random() < 0.5:
+                                self.reproduce()  # female offspring
+                            else:
+                                agent.reproduce()  # male offspring
+                            Configure.Fox_population_counter += 1
+                            print("reproduced 3 foxes")
+                    self.fertile = False
+                    self.continue_movement()
+                    #agent.continue_movement()
 
     def kill_rabbit(self):
         for agent, distance in self.in_proximity_accuracy().filter_kind(Rabbit_male):
@@ -113,14 +118,14 @@ class Foxes_female(Agent):
                 Configure.Rabbit_population_counter -= 1
 
     def update(self):
-        self.timer += 1
+        self.fertility_timer += 1
         self.energy -= Configure.fox_energy_decay_rate  # FOX_ENERGY_DECAY_RATE
         if self.energy <= 0:
             self.kill()
             Configure.Fox_population_counter -= 1
         if self.in_proximity_accuracy().filter_kind(Rabbit_male) or self.in_proximity_accuracy().filter_kind(Rabbit_female):
             self.kill_rabbit()
-        if self.timer % 100 == 0:
+        if self.fertility_timer % 100 == 0:
             self.fertile = True
         if self.in_proximity_accuracy().filter_kind(Foxes_male) and self.fertile:
             self.mating()
