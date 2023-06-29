@@ -14,47 +14,44 @@ import matplotlib.pyplot as plt
 
 
 class Configure():
+    #do not change:
     Fox_population_counter = 20
     Rabbit_population_counter = 50
     Grass_counter = 0
     rabbit_energy_decay_rate = 0.004
     fox_energy_decay_rate = 0.01
-    #rabbit_reproduce_rate = 0.02
-    #fox_reproduce_rate = 0.01
-    #fox_sexual_reproduction = 0.5
-    #rabbit_sexual_reproduction = 0.5
+    fox_kill_dist = 10
+    fox_kill_dist_male = 15 #killing advantage
+    rabbit_eat_dist = 10
 
+    #only change:
     fox_reproduce_2_thr = 5#3
     fox_reproduce_3_thr=10#5
     rabbit_reproduce_2_thr = 3
     rabbit_reproduce_3_thr=5
 
-    fox_mate_dist = 19
-    fox_kill_dist = 6
-    rabbit_mate_dist = 30
-    rabbit_eat_dist = 5
+    fox_mate_dist = 10
+    rabbit_mate_dist = 10
 
     Fox_population = []
     Rabbit_population = []
-
-
 
     pass
 
 
 class Foxes_male(Agent):
-    energy = 1
+    energy = 1 #can adjust for survival adv
     timer = 1
     fertile = False
 
     def kill_rabbit(self):
         for agent, distance in self.in_proximity_accuracy().filter_kind(Rabbit_male):
-            if distance < Configure.fox_kill_dist and agent.alive():
+            if distance < Configure.fox_kill_dist_male and agent.alive():
                 agent.kill()
                 self.energy += 0.5
                 Configure.Rabbit_population_counter -= 1
         for agent, distance in self.in_proximity_accuracy().filter_kind(Rabbit_female):
-            if distance < Configure.fox_kill_dist and agent.alive():
+            if distance < Configure.fox_kill_dist_male and agent.alive():
                 agent.kill()
                 self.energy += 0.5
                 Configure.Rabbit_population_counter -= 1
@@ -175,9 +172,6 @@ class Rabbit_female(Agent):
                     self.energy += 0.5
                     # print("Ate grass")
                     self.continue_movement()
-                    # if self.energy>1:
-                    # self.reproduce()
-                    # Configure.Rabbit_population_counter+=1
                     Configure.Grass_counter = 1
 
     def mating(self):
